@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+enum type{
+	CMD_ON = 0;
+	CMD_INFO = 1;
+	CMD_OFF = 2;
+}
+
+
+message on{
+	string account = 1;
+	string passwd = 2;	
+}
+
+message info{
+	string data = 1;
+}
+
+message off{
+	
+}
+
