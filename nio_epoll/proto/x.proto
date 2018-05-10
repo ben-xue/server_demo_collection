@@ -1,11 +1,16 @@
 syntax = "proto3";
 
-enum type{
+enum ts_cmd{
 	CMD_ON = 0;
 	CMD_INFO = 1;
 	CMD_OFF = 2;
 }
 
+
+message head_msg{
+	sfixed32	size = 1;
+	fixed32		type = 2;
+}
 
 message on{
 	string account = 1;

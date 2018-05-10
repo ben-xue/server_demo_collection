@@ -37,12 +37,14 @@ namespace protobuf_x_2eproto {
 struct TableStruct {
   static const ::google::protobuf::internal::ParseTableField entries[];
   static const ::google::protobuf::internal::AuxillaryParseTableField aux[];
-  static const ::google::protobuf::internal::ParseTable schema[3];
+  static const ::google::protobuf::internal::ParseTable schema[4];
   static const ::google::protobuf::internal::FieldMetadata field_metadata[];
   static const ::google::protobuf::internal::SerializationTable serialization_table[];
   static const ::google::protobuf::uint32 offsets[];
 };
 void AddDescriptors();
+void InitDefaultshead_msgImpl();
+void InitDefaultshead_msg();
 void InitDefaultsonImpl();
 void InitDefaultson();
 void InitDefaultsinfoImpl();
@@ -50,11 +52,15 @@ void InitDefaultsinfo();
 void InitDefaultsoffImpl();
 void InitDefaultsoff();
 inline void InitDefaults() {
+  InitDefaultshead_msg();
   InitDefaultson();
   InitDefaultsinfo();
   InitDefaultsoff();
 }
 }  // namespace protobuf_x_2eproto
+class head_msg;
+class head_msgDefaultTypeInternal;
+extern head_msgDefaultTypeInternal _head_msg_default_instance_;
 class info;
 class infoDefaultTypeInternal;
 extern infoDefaultTypeInternal _info_default_instance_;
@@ -65,29 +71,135 @@ class on;
 class onDefaultTypeInternal;
 extern onDefaultTypeInternal _on_default_instance_;
 
-enum type {
+enum ts_cmd {
   CMD_ON = 0,
   CMD_INFO = 1,
   CMD_OFF = 2,
-  type_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
-  type_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
+  ts_cmd_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
+  ts_cmd_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
 };
-bool type_IsValid(int value);
-const type type_MIN = CMD_ON;
-const type type_MAX = CMD_OFF;
-const int type_ARRAYSIZE = type_MAX + 1;
+bool ts_cmd_IsValid(int value);
+const ts_cmd ts_cmd_MIN = CMD_ON;
+const ts_cmd ts_cmd_MAX = CMD_OFF;
+const int ts_cmd_ARRAYSIZE = ts_cmd_MAX + 1;
 
-const ::google::protobuf::EnumDescriptor* type_descriptor();
-inline const ::std::string& type_Name(type value) {
+const ::google::protobuf::EnumDescriptor* ts_cmd_descriptor();
+inline const ::std::string& ts_cmd_Name(ts_cmd value) {
   return ::google::protobuf::internal::NameOfEnum(
-    type_descriptor(), value);
+    ts_cmd_descriptor(), value);
 }
-inline bool type_Parse(
-    const ::std::string& name, type* value) {
-  return ::google::protobuf::internal::ParseNamedEnum<type>(
-    type_descriptor(), name, value);
+inline bool ts_cmd_Parse(
+    const ::std::string& name, ts_cmd* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ts_cmd>(
+    ts_cmd_descriptor(), name, value);
 }
 // ===================================================================
+
+class head_msg : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:head_msg) */ {
+ public:
+  head_msg();
+  virtual ~head_msg();
+
+  head_msg(const head_msg& from);
+
+  inline head_msg& operator=(const head_msg& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  #if LANG_CXX11
+  head_msg(head_msg&& from) noexcept
+    : head_msg() {
+    *this = ::std::move(from);
+  }
+
+  inline head_msg& operator=(head_msg&& from) noexcept {
+    if (GetArenaNoVirtual() == from.GetArenaNoVirtual()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+  #endif
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const head_msg& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const head_msg* internal_default_instance() {
+    return reinterpret_cast<const head_msg*>(
+               &_head_msg_default_instance_);
+  }
+  static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
+    0;
+
+  void Swap(head_msg* other);
+  friend void swap(head_msg& a, head_msg& b) {
+    a.Swap(&b);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline head_msg* New() const PROTOBUF_FINAL { return New(NULL); }
+
+  head_msg* New(::google::protobuf::Arena* arena) const PROTOBUF_FINAL;
+  void CopyFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void MergeFrom(const ::google::protobuf::Message& from) PROTOBUF_FINAL;
+  void CopyFrom(const head_msg& from);
+  void MergeFrom(const head_msg& from);
+  void Clear() PROTOBUF_FINAL;
+  bool IsInitialized() const PROTOBUF_FINAL;
+
+  size_t ByteSizeLong() const PROTOBUF_FINAL;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input) PROTOBUF_FINAL;
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const PROTOBUF_FINAL;
+  ::google::protobuf::uint8* InternalSerializeWithCachedSizesToArray(
+      bool deterministic, ::google::protobuf::uint8* target) const PROTOBUF_FINAL;
+  int GetCachedSize() const PROTOBUF_FINAL { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const PROTOBUF_FINAL;
+  void InternalSwap(head_msg* other);
+  private:
+  inline ::google::protobuf::Arena* GetArenaNoVirtual() const {
+    return NULL;
+  }
+  inline void* MaybeArenaPtr() const {
+    return NULL;
+  }
+  public:
+
+  ::google::protobuf::Metadata GetMetadata() const PROTOBUF_FINAL;
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  // sfixed32 size = 1;
+  void clear_size();
+  static const int kSizeFieldNumber = 1;
+  ::google::protobuf::int32 size() const;
+  void set_size(::google::protobuf::int32 value);
+
+  // fixed32 type = 2;
+  void clear_type();
+  static const int kTypeFieldNumber = 2;
+  ::google::protobuf::uint32 type() const;
+  void set_type(::google::protobuf::uint32 value);
+
+  // @@protoc_insertion_point(class_scope:head_msg)
+ private:
+
+  ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::int32 size_;
+  ::google::protobuf::uint32 type_;
+  mutable int _cached_size_;
+  friend struct ::protobuf_x_2eproto::TableStruct;
+  friend void ::protobuf_x_2eproto::InitDefaultshead_msgImpl();
+};
+// -------------------------------------------------------------------
 
 class on : public ::google::protobuf::Message /* @@protoc_insertion_point(class_definition:on) */ {
  public:
@@ -124,7 +236,7 @@ class on : public ::google::protobuf::Message /* @@protoc_insertion_point(class_
                &_on_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    0;
+    1;
 
   void Swap(on* other);
   friend void swap(on& a, on& b) {
@@ -246,7 +358,7 @@ class info : public ::google::protobuf::Message /* @@protoc_insertion_point(clas
                &_info_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    1;
+    2;
 
   void Swap(info* other);
   friend void swap(info& a, info& b) {
@@ -353,7 +465,7 @@ class off : public ::google::protobuf::Message /* @@protoc_insertion_point(class
                &_off_default_instance_);
   }
   static PROTOBUF_CONSTEXPR int const kIndexInFileMessages =
-    2;
+    3;
 
   void Swap(off* other);
   friend void swap(off& a, off& b) {
@@ -417,6 +529,38 @@ class off : public ::google::protobuf::Message /* @@protoc_insertion_point(class
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wstrict-aliasing"
 #endif  // __GNUC__
+// head_msg
+
+// sfixed32 size = 1;
+inline void head_msg::clear_size() {
+  size_ = 0;
+}
+inline ::google::protobuf::int32 head_msg::size() const {
+  // @@protoc_insertion_point(field_get:head_msg.size)
+  return size_;
+}
+inline void head_msg::set_size(::google::protobuf::int32 value) {
+  
+  size_ = value;
+  // @@protoc_insertion_point(field_set:head_msg.size)
+}
+
+// fixed32 type = 2;
+inline void head_msg::clear_type() {
+  type_ = 0u;
+}
+inline ::google::protobuf::uint32 head_msg::type() const {
+  // @@protoc_insertion_point(field_get:head_msg.type)
+  return type_;
+}
+inline void head_msg::set_type(::google::protobuf::uint32 value) {
+  
+  type_ = value;
+  // @@protoc_insertion_point(field_set:head_msg.type)
+}
+
+// -------------------------------------------------------------------
+
 // on
 
 // string account = 1;
@@ -593,6 +737,8 @@ inline void info::set_allocated_data(::std::string* data) {
 
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -600,10 +746,10 @@ inline void info::set_allocated_data(::std::string* data) {
 namespace google {
 namespace protobuf {
 
-template <> struct is_proto_enum< ::type> : ::google::protobuf::internal::true_type {};
+template <> struct is_proto_enum< ::ts_cmd> : ::google::protobuf::internal::true_type {};
 template <>
-inline const EnumDescriptor* GetEnumDescriptor< ::type>() {
-  return ::type_descriptor();
+inline const EnumDescriptor* GetEnumDescriptor< ::ts_cmd>() {
+  return ::ts_cmd_descriptor();
 }
 
 }  // namespace protobuf

@@ -20,12 +20,12 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='x.proto',
   package='',
   syntax='proto3',
-  serialized_pb=_b('\n\x07x.proto\"%\n\x02on\x12\x0f\n\x07\x61\x63\x63ount\x18\x01 \x01(\t\x12\x0e\n\x06passwd\x18\x02 \x01(\t\"\x14\n\x04info\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x05\n\x03off*-\n\x04type\x12\n\n\x06\x43MD_ON\x10\x00\x12\x0c\n\x08\x43MD_INFO\x10\x01\x12\x0b\n\x07\x43MD_OFF\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x07x.proto\"&\n\x08head_msg\x12\x0c\n\x04size\x18\x01 \x01(\x0f\x12\x0c\n\x04type\x18\x02 \x01(\x07\"%\n\x02on\x12\x0f\n\x07\x61\x63\x63ount\x18\x01 \x01(\t\x12\x0e\n\x06passwd\x18\x02 \x01(\t\"\x14\n\x04info\x12\x0c\n\x04\x64\x61ta\x18\x01 \x01(\t\"\x05\n\x03off*/\n\x06ts_cmd\x12\n\n\x06\x43MD_ON\x10\x00\x12\x0c\n\x08\x43MD_INFO\x10\x01\x12\x0b\n\x07\x43MD_OFF\x10\x02\x62\x06proto3')
 )
 
-_TYPE = _descriptor.EnumDescriptor(
-  name='type',
-  full_name='type',
+_TS_CMD = _descriptor.EnumDescriptor(
+  name='ts_cmd',
+  full_name='ts_cmd',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -44,16 +44,54 @@ _TYPE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=79,
-  serialized_end=124,
+  serialized_start=119,
+  serialized_end=166,
 )
-_sym_db.RegisterEnumDescriptor(_TYPE)
+_sym_db.RegisterEnumDescriptor(_TS_CMD)
 
-type = enum_type_wrapper.EnumTypeWrapper(_TYPE)
+ts_cmd = enum_type_wrapper.EnumTypeWrapper(_TS_CMD)
 CMD_ON = 0
 CMD_INFO = 1
 CMD_OFF = 2
 
+
+
+_HEAD_MSG = _descriptor.Descriptor(
+  name='head_msg',
+  full_name='head_msg',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='size', full_name='head_msg.size', index=0,
+      number=1, type=15, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='type', full_name='head_msg.type', index=1,
+      number=2, type=7, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=11,
+  serialized_end=49,
+)
 
 
 _ON = _descriptor.Descriptor(
@@ -89,8 +127,8 @@ _ON = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=11,
-  serialized_end=48,
+  serialized_start=51,
+  serialized_end=88,
 )
 
 
@@ -120,8 +158,8 @@ _INFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=50,
-  serialized_end=70,
+  serialized_start=90,
+  serialized_end=110,
 )
 
 
@@ -144,15 +182,23 @@ _OFF = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=72,
-  serialized_end=77,
+  serialized_start=112,
+  serialized_end=117,
 )
 
+DESCRIPTOR.message_types_by_name['head_msg'] = _HEAD_MSG
 DESCRIPTOR.message_types_by_name['on'] = _ON
 DESCRIPTOR.message_types_by_name['info'] = _INFO
 DESCRIPTOR.message_types_by_name['off'] = _OFF
-DESCRIPTOR.enum_types_by_name['type'] = _TYPE
+DESCRIPTOR.enum_types_by_name['ts_cmd'] = _TS_CMD
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
+
+head_msg = _reflection.GeneratedProtocolMessageType('head_msg', (_message.Message,), dict(
+  DESCRIPTOR = _HEAD_MSG,
+  __module__ = 'x_pb2'
+  # @@protoc_insertion_point(class_scope:head_msg)
+  ))
+_sym_db.RegisterMessage(head_msg)
 
 on = _reflection.GeneratedProtocolMessageType('on', (_message.Message,), dict(
   DESCRIPTOR = _ON,

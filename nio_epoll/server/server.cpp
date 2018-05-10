@@ -2,6 +2,10 @@
 
 #include <google/protobuf/message_lite.h>
 
+#include <signal.h>
+#include <netdb.h>
+
+
 #include <sstream>
 #include <cstdio>
 #include <cstdlib>
@@ -21,14 +25,9 @@
 #define MAX_CONNECT  (1024) 
 
 #define MAX_PACK_SIZE    (4 * 1024)
+#define HEAD_MSG_SIZE   (10)
 
 using namespace std;
-
-struct msg_head
-{
-    uint32_t size;
-    uint32_t type;
-};
 
 struct conn {
     int cnt;
@@ -37,8 +36,10 @@ struct conn {
     size_t alloced, head, tail;
     bool read_end;
     bool error;
+    bool has_head;
+    head_msg hm;
 
-    conn(int sock) : sock(sock), cnt(0),buf(0), head(0), tail(0), read_end(false), error(false)
+    conn(int sock) : sock(sock), cnt(0),buf(0), head(0), tail(0), read_end(false), error(false),has_head(false)
     {
         alloced = MAX_PACK_SIZE;
         buf = (char*)malloc(alloced);
@@ -50,6 +51,7 @@ struct conn {
     ~conn() { close(sock); }
 
     void read() {
+
         for (;;) {
             if (alloced - tail < MAX_PACK_SIZE) {
                 if (alloced - (tail - head) < MAX_PACK_SIZE) {
@@ -69,7 +71,7 @@ struct conn {
             if(alloced - tail > 0){
                 int n = recv(sock, buf+tail, alloced-tail,0);
                 if (n < 0) {
-                    if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
                         break;
                     }
                     perror("read");
@@ -83,37 +85,45 @@ struct conn {
                 tail += n;
             }
 
-            int head_size = sizeof(msg_head);
-            msg_head p_mh;
-            if(tail - head >= head_size){
-                p_mh = *(msg_head *)(buf+head);
-                head += head_size;
-            }
-            if(tail - head >= p_mh.size){
-                handle_pack(buf+head,p_mh.size,p_mh.type);
-                head += p_mh.size;
+            if(false == has_head){
+                if(tail - head >= HEAD_MSG_SIZE){
+                    hm.ParseFromArray(buf+head,HEAD_MSG_SIZE);
+                    head += HEAD_MSG_SIZE;
+                    has_head = true;
+                }else{
+                    continue;
+                }
+            }else{
+                int t_size = hm.size();
+                uint32_t t_type = hm.type();
+                if(tail - head >= t_size){
+                    handle_pack(buf+head,t_size,t_type);
+                    head += t_size;
+                    has_head = false;
+                }
             }
         }
     }
 
-    void handle_pack(char *body,int len,int type)
+    void handle_pack(char *body,int len,uint32_t type)
     {
         stringstream ss;
         info m_info;
 
         switch(type){
             case CMD_ON:
-                //
+                cout << "CMD_ON \n";
                 break;
             case CMD_INFO:
                 cnt = ++cnt % 500000;
                 m_info.ParseFromArray(body,len);
                 ss << cnt;
-                m_info.set_data("\n[msg : " + ss.str() + "]:\n" + m_info.data());
+                m_info.set_data("\n[msg:" + ss.str() + "]:\n" + m_info.data());
+                cout << m_info.data() <<endl;
                 write2(sock,m_info);
                 break;
             case CMD_OFF:
-                //
+                cout << "CMD_OFF" <<endl;
                 break;
         }
     }
@@ -122,14 +132,19 @@ struct conn {
     {
         char buf[MAX_PACK_SIZE] = {0};
         int len = 0;
+        len = msg.ByteSizeLong();
         msg.SerializeToArray(buf,len);
-        msg_head mh;
-        mh.size = len;
-        mh.type = CMD_INFO;
-        int n1 = send(sockfd,(void *)&mh,sizeof(mh),0);
+
+        head_msg hm;
+        hm.set_size(len);
+        hm.set_type(CMD_INFO);
+        char head_buf[HEAD_MSG_SIZE] = {0};
+        hm.SerializeToArray(head_buf,HEAD_MSG_SIZE);
+
+        int n1 = send(sockfd,head_buf,HEAD_MSG_SIZE,0);
         int n = send(sockfd,buf,len,0);
         if(n1 < 0 || n < 0){
-            if(errno != EAGAIN){
+            if(errno != EAGAIN && errno != EWOULDBLOCK){
                 perror("write");
                 error = true;
                 return -1; 
@@ -137,39 +152,14 @@ struct conn {
         }
     }
 
-    int write() {
-        while (head < tail) {
-            int n = ::write(sock, buf+head, tail-head);
-            if (n < 0) {
-                if (errno == EAGAIN) break;
-                perror("write");
-                error = true;
-                return -1;
-            }
-            // n >= 0
-            head += n;
-        }
-        return tail-head;
-    }
-
     void handle() {
         if (error) return;
         read();
         if (error) return;
-        write();
     }
     int done() const {
         return error || (read_end && (tail == head));
     }
-};
-
-struct connect_manager
-{
-private:
-    int  on_lines;
-    int  sockets[MAX_CONNECT];
-public:
-
 };
 
 static void setnonblocking(int fd)
@@ -211,22 +201,30 @@ static int setup_server_socket(int port)
     return sock;
 }
 
+int sigign() {
+    struct sigaction sa;
+    sa.sa_handler = SIG_IGN;
+    sa.sa_flags = 0;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGPIPE, &sa, 0);
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
+
+    sigign();
+
     struct epoll_event ev;
     struct epoll_event events[MAX_EVENTS];
     int listener, epfd;
-    int procs=1;
 
     int opt, port=DEFAULT_PORT;
 
-    while (-1 != (opt = getopt(argc, argv, "p:f:"))) {
+    while (-1 != (opt = getopt(argc, argv, "p:"))) {
         switch (opt) {
         case 'p':
             port = atoi(optarg);
-            break;
-        case 'f':
-            procs = atoi(optarg);
             break;
         default:
             fprintf(stderr, "Unknown option: %c\n", opt);
@@ -235,9 +233,6 @@ int main(int argc, char *argv[])
     }
 
     listener = setup_server_socket(port);
-
-    for (int i=1; i<procs; ++i)
-        fork();
 
     if ((epfd = epoll_create(128)) < 0) {
         perror("epoll_create");
@@ -251,7 +246,6 @@ int main(int argc, char *argv[])
 
     printf("Listening port %d\n", port);
 
-    unsigned long proc = 0;
     struct timeval tim, tim_prev;
     gettimeofday(&tim_prev, NULL);
     tim_prev = tim;
@@ -271,32 +265,32 @@ int main(int argc, char *argv[])
                     continue;
                 }
 
+                {
+                    #define NI_MAXHOST      1025
+                    #define NI_MAXSERV      32
+
+                    char buf_host[NI_MAXHOST];
+                    char buf_service[NI_MAXSERV];
+                    getnameinfo((struct sockaddr *)&client_addr,sizeof(client_addr),buf_host,NI_MAXHOST,buf_service,NI_MAXSERV,0);
+
+                    cout << buf_host <<endl;
+                    cout << buf_service <<endl;
+                }
+
                 setnonblocking(client);
                 memset(&ev, 0, sizeof ev);
                 ev.events = EPOLLIN | EPOLLET;
-                ev.data.ptr = (void*)new conn(client);
+                ev.data.ptr = (void *)new conn(client);
                 epoll_ctl(epfd, EPOLL_CTL_ADD, client, &ev);
             } else {
                 conn *pc = (conn*)events[i].data.ptr;
                 pc->handle();
-                proc++;
                 if (pc->done()) {
                     epoll_ctl(epfd, EPOLL_CTL_DEL, pc->sock, &ev);
+                    close(pc->sock);
                     delete pc;
                 }
             }
-        }
-
-        if (proc > 100000) {
-            proc = 0;
-            gettimeofday(&tim, NULL);
-            timersub(&tim, &tim_prev, &tim_prev);
-            long long d = tim_prev.tv_sec;
-            d *= 1000;
-            d += tim_prev.tv_usec / 1000;
-            printf("%lld msec per 100000 req\n", d);
-            printf("%lld reqs per sec\n", 100000LL*1000/d);
-            tim_prev = tim;
         }
     }
     return 0;
