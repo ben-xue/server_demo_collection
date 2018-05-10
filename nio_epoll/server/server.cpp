@@ -133,7 +133,7 @@ struct conn {
                 ss << cnt;
                 m_info.set_data("\n[msg:" + ss.str() + "]:\n" + m_info.data());
                 cout << m_info.data() <<endl;
-                write2(sock,m_info);
+                //write2(sock,m_info);
                 break;
             case CMD_OFF:
                 cout << "CMD_OFF" <<endl;
@@ -210,7 +210,7 @@ static int setup_server_socket(int port)
         perror("listen");
         exit(-1);
     }
-
+    
     return sock;
 }
 

@@ -1,3 +1,5 @@
+#include "x.pb.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,35 +13,14 @@
 #include <iostream>
 using namespace std;
 
-#ifndef _BLOCK
-#define _BLOCK
-#endif
-
-
+#define HEAD_SIZE   10
 #define MAX_BUF	512
 
+const char *IP_default = "127.0.0.1";
+int PORT_default = 5000;
+
 char *IP = NULL;
-int PORT = 0;
-
-int my_send(int fd,const void *data,size_t size)
-{
-#ifdef _BLOCK
-	int ret = write(fd,data,size);
-	return ret;
-#else
-	//
-#endif
-}
-
-int my_receive(int fd,void *data,size_t size)
-{
-#ifdef _BLOCK
-	int ret = read(fd,data,size);
-	return ret;
-#else
-	//
-#endif
-}
+int PORT;
 
 //函数
 //功能:设置socket为非阻塞的
@@ -66,18 +47,28 @@ make_socket_non_blocking (int sfd)
     return 0;
 }
 
+void send_head_msg(int sockfd,int size,uint32_t type)
+{
+    head_msg  hm;
+    hm.set_size(size);
+    hm.set_type(type);
+    int len = hm.ByteSizeLong();
+    char *buf = (char *)malloc(len);
+    hm.SerializeToArray(buf,len);
+    int ret = send(sockfd,buf,len,0);
+    delete buf;
+}
 
 int main(int argc,char **argv)
 {
-    if(argc != 3){
-        printf("Uasge: ip port\n");
-        return -1;
+    if(argc == 3){
+        IP = argv[1];
+        PORT = atoi(argv[2]);
+    }else{
+        IP = const_cast<char *>(IP_default);
+        PORT = PORT_default;
     }
 
-    IP = argv[1];
-    PORT = atoi(argv[2]);
-
-    cout << IP << "   "<< PORT <<endl;
     struct sockaddr_in  cli;
     int sockfd;
     sockfd = socket(AF_INET,SOCK_STREAM,0);
@@ -93,5 +84,21 @@ int main(int argc,char **argv)
     	cout << "Connect to " << IP << ":" << PORT <<"!" << endl;
     }
 
+    info m_info;
+    m_info.set_data("hello,world");
+    int len = m_info.ByteSizeLong();
+    send_head_msg(sockfd,len,CMD_INFO);
+    char *buf = (char *)malloc(len);
+    int ret = send(sockfd,buf,len,0);
+    cout << "send data " << ret <<endl;
+    delete buf;
+
+    m_info.set_data("fuck you a XX okok ok ok hello china");
+    len = m_info.ByteSizeLong();
+    send_head_msg(sockfd,len,CMD_INFO);
+    buf = (char *)malloc(len);
+    ret = send(sockfd,buf,len,0);
+    cout << "send data " << ret <<endl;
+    delete buf;
 	return 0;
 }
