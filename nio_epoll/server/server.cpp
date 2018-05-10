@@ -24,9 +24,12 @@
 #define MAX_EVENTS   (1000)
 #define MAX_CONNECT  (1024) 
 
-#define MAX_PACK_SIZE    (4 * 1024)
+#define MAX_PACK_SIZE   (4 * 1024)
 #define HEAD_MSG_SIZE   (10)
 
+
+// #define NI_MAXHOST  (1025)
+// #define NI_MAXSERV  (32)
 using namespace std;
 
 struct conn {
@@ -51,7 +54,6 @@ struct conn {
     ~conn() { close(sock); }
 
     void read() {
-
         for (;;) {
             if (alloced - tail < MAX_PACK_SIZE) {
                 if (alloced - (tail - head) < MAX_PACK_SIZE) {
@@ -80,7 +82,18 @@ struct conn {
                 }
                 if (n == 0) {
                     read_end = true;
-                    return;
+                    {
+                        sockaddr_in close_client;
+                        socklen_t len;
+                        getpeername(sock,(sockaddr *)&close_client,&len);
+
+                        char buf_host[NI_MAXHOST];
+                        char buf_service[NI_MAXSERV];
+                        getnameinfo((struct sockaddr *)&close_client,len,buf_host,NI_MAXHOST,buf_service,NI_MAXSERV,0);
+
+                        cout << buf_host <<":"<<buf_service << " quited" << endl;
+                    }
+                    break;
                 }
                 tail += n;
             }
@@ -201,7 +214,8 @@ static int setup_server_socket(int port)
     return sock;
 }
 
-int sigign() {
+static int sigign() 
+{
     struct sigaction sa;
     sa.sa_handler = SIG_IGN;
     sa.sa_flags = 0;
@@ -263,23 +277,18 @@ int main(int argc, char *argv[])
                 if (client < 0) {
                     perror("accept");
                     continue;
-                }
-
-                {
-                    #define NI_MAXHOST      1025
-                    #define NI_MAXSERV      32
-
+                }else{
                     char buf_host[NI_MAXHOST];
                     char buf_service[NI_MAXSERV];
                     getnameinfo((struct sockaddr *)&client_addr,sizeof(client_addr),buf_host,NI_MAXHOST,buf_service,NI_MAXSERV,0);
 
-                    cout << buf_host <<endl;
-                    cout << buf_service <<endl;
+                    cout << buf_host <<":"<<buf_service << " connected" << endl;
                 }
 
                 setnonblocking(client);
                 memset(&ev, 0, sizeof ev);
                 ev.events = EPOLLIN | EPOLLET;
+                //ev.events = EPOLLIN;
                 ev.data.ptr = (void *)new conn(client);
                 epoll_ctl(epfd, EPOLL_CTL_ADD, client, &ev);
             } else {
