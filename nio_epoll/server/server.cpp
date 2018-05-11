@@ -5,7 +5,6 @@
 #include <signal.h>
 #include <netdb.h>
 
-
 #include <sstream>
 #include <cstdio>
 #include <cstdlib>
@@ -25,12 +24,16 @@
 #define MAX_CONNECT  (1024) 
 
 #define MAX_PACK_SIZE   (4 * 1024)
-#define HEAD_MSG_SIZE   (10)
 
-
-// #define NI_MAXHOST  (1025)
-// #define NI_MAXSERV  (32)
 using namespace std;
+
+struct head_msg
+{
+    int  size;
+    int  type;    
+};
+
+#define MSG_HEAD_SZIE   (sizeof(head_msg))
 
 struct conn {
     int cnt;
@@ -41,6 +44,8 @@ struct conn {
     bool error;
     bool has_head;
     head_msg hm;
+    char buf_host[NI_MAXHOST];
+    char buf_service[NI_MAXSERV];
 
     conn(int sock) : sock(sock), cnt(0),buf(0), head(0), tail(0), read_end(false), error(false),has_head(false)
     {
@@ -51,6 +56,7 @@ struct conn {
             exit(-1);
         }
     }
+
     ~conn() { close(sock); }
 
     void read() {
@@ -74,41 +80,37 @@ struct conn {
                 int n = recv(sock, buf+tail, alloced-tail,0);
                 if (n < 0) {
                     if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                        break;
+                        if(tail == head){
+                            //该连接的数据已经处理完毕
+                            break;
+                        }
+                    }else{
+                        perror("read");
+                        error = true;
+                        return;
                     }
-                    perror("read");
-                    error = true;
-                    return;
-                }
-                if (n == 0) {
+                }else if (n == 0) {
                     read_end = true;
-                    {
-                        sockaddr_in close_client;
-                        socklen_t len;
-                        getpeername(sock,(sockaddr *)&close_client,&len);
-
-                        char buf_host[NI_MAXHOST];
-                        char buf_service[NI_MAXSERV];
-                        getnameinfo((struct sockaddr *)&close_client,len,buf_host,NI_MAXHOST,buf_service,NI_MAXSERV,0);
-
-                        cout << buf_host <<":"<<buf_service << " quited" << endl;
-                    }
+                    cout << buf_host <<":"<<buf_service << " quited" << endl;
                     break;
+                }else{
+                    tail += n;
                 }
-                tail += n;
             }
 
             if(false == has_head){
-                if(tail - head >= HEAD_MSG_SIZE){
-                    hm.ParseFromArray(buf+head,HEAD_MSG_SIZE);
-                    head += HEAD_MSG_SIZE;
+                if(tail - head >= MSG_HEAD_SZIE){
+                    hm.size = *(int *)(buf + head);
+                    head += sizeof(int);
+                    hm.type = *(int *)(buf + head);
+                    head += sizeof(int);
                     has_head = true;
                 }else{
                     continue;
                 }
             }else{
-                int t_size = hm.size();
-                uint32_t t_type = hm.type();
+                int t_size = hm.size;
+                int t_type = hm.type;
                 if(tail - head >= t_size){
                     handle_pack(buf+head,t_size,t_type);
                     head += t_size;
@@ -118,7 +120,7 @@ struct conn {
         }
     }
 
-    void handle_pack(char *body,int len,uint32_t type)
+    void handle_pack(char *body,int len,int type)
     {
         stringstream ss;
         info m_info;
@@ -133,7 +135,7 @@ struct conn {
                 ss << cnt;
                 m_info.set_data("\n[msg:" + ss.str() + "]:\n" + m_info.data());
                 cout << m_info.data() <<endl;
-                //write2(sock,m_info);
+                write2(sock,m_info);
                 break;
             case CMD_OFF:
                 cout << "CMD_OFF" <<endl;
@@ -149,12 +151,10 @@ struct conn {
         msg.SerializeToArray(buf,len);
 
         head_msg hm;
-        hm.set_size(len);
-        hm.set_type(CMD_INFO);
-        char head_buf[HEAD_MSG_SIZE] = {0};
-        hm.SerializeToArray(head_buf,HEAD_MSG_SIZE);
+        hm.size = len;
+        hm.type = CMD_INFO;
 
-        int n1 = send(sockfd,head_buf,HEAD_MSG_SIZE,0);
+        int n1 = send(sockfd,(char *)&hm,MSG_HEAD_SZIE,0);
         int n = send(sockfd,buf,len,0);
         if(n1 < 0 || n < 0){
             if(errno != EAGAIN && errno != EWOULDBLOCK){
@@ -210,7 +210,7 @@ static int setup_server_socket(int port)
         perror("listen");
         exit(-1);
     }
-    
+
     return sock;
 }
 
@@ -277,20 +277,16 @@ int main(int argc, char *argv[])
                 if (client < 0) {
                     perror("accept");
                     continue;
-                }else{
-                    char buf_host[NI_MAXHOST];
-                    char buf_service[NI_MAXSERV];
-                    getnameinfo((struct sockaddr *)&client_addr,sizeof(client_addr),buf_host,NI_MAXHOST,buf_service,NI_MAXSERV,0);
-
-                    cout << buf_host <<":"<<buf_service << " connected" << endl;
                 }
-
                 setnonblocking(client);
                 memset(&ev, 0, sizeof ev);
                 ev.events = EPOLLIN | EPOLLET;
                 //ev.events = EPOLLIN;
-                ev.data.ptr = (void *)new conn(client);
+                conn *pc = new conn(client);
+                ev.data.ptr = (void *)pc;
                 epoll_ctl(epfd, EPOLL_CTL_ADD, client, &ev);
+                getnameinfo((struct sockaddr *)&client_addr,sizeof(client_addr),pc->buf_host,NI_MAXHOST,pc->buf_service,NI_MAXSERV,0);
+                cout << pc->buf_host <<":"<<pc->buf_service << " connected" << endl;
             } else {
                 conn *pc = (conn*)events[i].data.ptr;
                 pc->handle();

@@ -1,32 +1,27 @@
 import socket
 import x_pb2
 import os,time
+import struct
+
+HEAD_MSG_SIZE = 10
 
 addr = ("127.0.0.1",5000)
 
 #addr = ("120.78.164.80",30000)
 
-def my_send(sock,msg):
-	s_msg = msg.SerializeToString()
-	length = len(s_msg)
+def my_send(sock,msg,type1):
+	target_str = msg.SerializeToString()
+	length = len(target_str)
+	print(length)
+	len_bytes = struct.pack("i",length)
+	type_bytes = struct.pack("i",type1)
 
-	s_head = x_pb2.head_msg()
-	s_head.size = length
-	s_head.type = x_pb2.CMD_INFO
-
-	ret1 = sock.send(s_head.SerializeToString())
-
-	ret2 = sock.send(s_msg)
-
-
-	if ret1 == 10 and ret2 == length:
-		return True
-
+	sock.send(len_bytes+type_bytes)
+	sock.send(target_str)
 
 def connect_2_server():
 	s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 	ret = s.connect(addr)
-	print(ret,type(ret))
 	print("connect success")
 	return s
 
@@ -35,8 +30,8 @@ if __name__ == "__main__":
 
 	msg_login = x_pb2.on()
 	msg_login.account = "xue"
-	msg_login.passed = "12345"
-	my_send(msg_login)
+	msg_login.passwd = "12345"
+	my_send(s,msg_login,x_pb2.CMD_ON)
 
 	msg = x_pb2.info()
 	msg.data = "hello,world"
@@ -44,11 +39,13 @@ if __name__ == "__main__":
 	msg1 = x_pb2.info()
 	msg1.data = "this is fuck"
 
-	if my_send(s,msg):
-		print("msg send ok")
+	my_send(s,msg,x_pb2.CMD_INFO)
 
-	if my_send(s,msg1):
-		print("msg1 send ok")
+	my_send(s,msg1,x_pb2.CMD_INFO)
+
+	time.sleep(1)
 
 	s.close()
+
+
 

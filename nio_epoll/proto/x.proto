@@ -6,12 +6,6 @@ enum ts_cmd{
 	CMD_OFF = 2;
 }
 
-
-message head_msg{
-	sfixed32	size = 1;
-	fixed32		type = 2;
-}
-
 message on{
 	string account = 1;
 	string passwd = 2;	

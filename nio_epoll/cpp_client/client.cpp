@@ -13,17 +13,22 @@
 #include <iostream>
 using namespace std;
 
-#define HEAD_SIZE   10
 #define MAX_BUF	512
+
+struct head_msg
+{
+    int  size;
+    int  type;    
+};
+
+#define MSG_HEAD_SZIE   (sizeof(head_msg))
 
 const char *IP_default = "127.0.0.1";
 int PORT_default = 5000;
 
 char *IP = NULL;
-int PORT;
+int PORT = 0;
 
-//函数
-//功能:设置socket为非阻塞的
 static int
 make_socket_non_blocking (int sfd)
 {
@@ -47,16 +52,13 @@ make_socket_non_blocking (int sfd)
     return 0;
 }
 
-void send_head_msg(int sockfd,int size,uint32_t type)
+void send_head_msg(int sockfd,int size,int type)
 {
-    head_msg  hm;
-    hm.set_size(size);
-    hm.set_type(type);
-    int len = hm.ByteSizeLong();
-    char *buf = (char *)malloc(len);
-    hm.SerializeToArray(buf,len);
-    int ret = send(sockfd,buf,len,0);
-    delete buf;
+    head_msg hm;
+    hm.size = size;
+    hm.type = type;
+    int ret = send(sockfd,(char *)&hm,MSG_HEAD_SZIE,0);
+    cout << "send " << ret << "bytes" <<endl;
 }
 
 int main(int argc,char **argv)
@@ -64,9 +66,10 @@ int main(int argc,char **argv)
     if(argc == 3){
         IP = argv[1];
         PORT = atoi(argv[2]);
+        return -1;
     }else{
-        IP = const_cast<char *>(IP_default);
-        PORT = PORT_default;
+      IP = const_cast<char *>(IP_default);
+      PORT = 5000;  
     }
 
     struct sockaddr_in  cli;
@@ -87,18 +90,26 @@ int main(int argc,char **argv)
     info m_info;
     m_info.set_data("hello,world");
     int len = m_info.ByteSizeLong();
-    send_head_msg(sockfd,len,CMD_INFO);
+    cout << len <<endl;
     char *buf = (char *)malloc(len);
-    int ret = send(sockfd,buf,len,0);
-    cout << "send data " << ret <<endl;
+    m_info.SerializeToArray(buf,len);
+    send_head_msg(sockfd,len,CMD_INFO);
+    send(sockfd,buf,len,0);
     delete buf;
 
-    m_info.set_data("fuck you a XX okok ok ok hello china");
+    m_info;
+    m_info.set_data("zhengyifan da bao jian");
     len = m_info.ByteSizeLong();
+    cout << len <<endl;
     send_head_msg(sockfd,len,CMD_INFO);
     buf = (char *)malloc(len);
-    ret = send(sockfd,buf,len,0);
-    cout << "send data " << ret <<endl;
+    m_info.SerializeToArray(buf,len);
+    send(sockfd,buf,len,0);
     delete buf;
+
+    //sleep(10);
+
+    close(sockfd);
+
 	return 0;
 }
